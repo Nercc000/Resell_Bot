@@ -674,7 +674,7 @@ Antworte NUR mit: JA oder NEIN"""
 
 
 def main():
-    url = "https://www.kleinanzeigen.de/s-preis:150:400/playstation-5/k0" # Preis etwas angepasst
+    url = "https://www.kleinanzeigen.de/s-preis:100:300/playstation-5/k0" # Preisfilter angepasst (User Wunsch: max ~280)
     
     # Schritt 1: Scrapen & Initial Filter (Pre-Filter + Title AI)
     # manual_filter läuft implizit VOR der KI in 'scrape_listings' (wenn wir es dort einbauen)

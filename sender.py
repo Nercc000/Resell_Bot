@@ -118,8 +118,16 @@ def load_listings(filename: str = "ready_to_send.json") -> list[dict]:
     # 1. Versuche Supabase
     if supabase:
         try:
-            print("   📡 Lade Listings aus Supabase...", flush=True)
-            response = supabase.table("listings").select("*").execute()
+            print("   📡 Lade Listings aus Supabase (nur offene)...", flush=True)
+            # Filter: message_sent=False AND deleted=False AND filter_status='passed' (optional, but safer)
+            # We use filter_status.ilike('%passed%') to catch 'passed', 'passed_ai', etc.
+            response = supabase.table("listings") \
+                .select("*") \
+                .eq("message_sent", False) \
+                .eq("deleted", False) \
+                .ilike("filter_status", "%passed%") \
+                .execute()
+                
             if response.data:
                 listings = []
                 for row in response.data:
@@ -130,13 +138,12 @@ def load_listings(filename: str = "ready_to_send.json") -> list[dict]:
                         "price": row.get("price"),
                         "link": row.get("link"),
                         "location": row.get("location"),
-                        "category": row.get("category", "normal"),  # NEW: Load category
+                        "category": row.get("category", "normal"),
                     }
-                    # Extra Daten aus JSONB
                     if row.get("data"):
                         listing.update(row["data"])
                     listings.append(listing)
-                print(f"   ✅ {len(listings)} Listings aus DB geladen.", flush=True)
+                print(f"   ✅ {len(listings)} Sende-bereite Listings geladen.", flush=True)
                 return listings
         except Exception as e:
             print(f"   ⚠️ Supabase Fehler: {e}", flush=True)

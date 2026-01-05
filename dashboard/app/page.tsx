@@ -4,7 +4,7 @@ import { LiveLogs } from "@/components/live-logs"
 import { ListingsTable } from "@/components/listings-table"
 import { RealtimeProvider } from "@/components/realtime-provider"
 import { Button } from "@/components/ui/button"
-import { Settings, MessageSquare } from "lucide-react"
+import { Settings, MessageSquare, Filter } from "lucide-react"
 import Link from "next/link"
 
 export default function Dashboard() {
@@ -18,8 +18,15 @@ export default function Dashboard() {
             </h1>
             <nav className="ml-auto flex items-center gap-4 sm:gap-6">
               <Link href="/templates">
-                <Button variant="ghost" size="icon" title="Nachrichten Vorlagen">
-                  <MessageSquare className="h-5 w-5" />
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Vorlagen
+                </Button>
+              </Link>
+              <Link href="/debug">
+                <Button variant="ghost" size="sm" className="gap-2 text-purple-500 hover:text-purple-600 hover:bg-purple-500/10">
+                  <Filter className="h-4 w-4" />
+                  Filter Test
                 </Button>
               </Link>
               <Link href="/settings">

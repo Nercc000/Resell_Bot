@@ -282,8 +282,7 @@ def categorize_listings(listings: list[dict]) -> list[dict]:
         
     return listings
 
-    except Exception as e:
-        print(f"   ⚠️ Cookie Config Fehler: {e}", flush=True)
+
 
 def dismiss_overlays(page):
     """Schließt Modal-Backdrops und andere Overlays via JavaScript."""

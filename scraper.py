@@ -99,27 +99,7 @@ def dismiss_overlays(page):
 
                 // Allgemeine Modals
                 const closeButtons = document.querySelectorAll('.modal-close, .close-button, [aria-label="Schließen"], .overlay-close');
-                closeButtons.forEach(btn => btn.click());
-            }
-        """)
-    except: pass
-
-
-    except Exception as e:
-        print(f"   ⚠️ Cookie Config Fehler: {e}", flush=True)
-
-def dismiss_overlays(page):
-    """Schließt Modal-Backdrops und andere Overlays via JavaScript."""
-    # Erst Cookies klären
-    handle_cookie_consent(page)
-    
-    # Dann Rest
-    try:
-        page.evaluate("""
-            () => {
-                 // Login Overlay (nerviges zweites Modal)
-                const loginOverlay = document.querySelector('.login-overlay--content .overlay-close');
-                if (loginOverlay) loginOverlay.click();
+                if (loginOverlay) login.click();
 
                 // Allgemeine Modals
                 const closeButtons = document.querySelectorAll('.modal-close, .close-button, [aria-label="Schließen"], .overlay-close');
@@ -282,32 +262,6 @@ def categorize_listings(listings: list[dict]) -> list[dict]:
         
     return listings
 
-
-
-def dismiss_overlays(page):
-    """Schließt Modal-Backdrops und andere Overlays via JavaScript."""
-    # Erst Cookies klären
-    handle_cookie_consent(page)
-    
-    # Dann Rest
-    try:
-        page.evaluate("""
-            () => {
-                 // Login Overlay (nerviges zweites Modal)
-                const loginOverlay = document.querySelector('.login-overlay--content .overlay-close');
-                if (loginOverlay) loginOverlay.click();
-
-                // Allgemeine Modals
-                const closeButtons = document.querySelectorAll('.modal-close, .close-button, [aria-label="Schließen"], .overlay-close');
-                closeButtons.forEach(btn => btn.click());
-            }
-        """)
-    except: pass
-
-def scrape_listings(base_url: str, num_pages: int = 1, use_ai_filter: bool = True) -> list[dict]:
-    """Scrapt Listings von Kleinanzeigen."""
-    listings = []
-    
     print(f"🌎 Starte Browser (Camoufox)...")
     
     with Camoufox(headless=True) as browser:

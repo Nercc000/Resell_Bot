@@ -144,26 +144,32 @@ def scrape_listings(base_url: str, num_pages: int = 1, use_ai_filter: bool = Tru
                 # Kleinanzeigen Pagination Logic
                 if "/seite:" in base_url:
                     # Falls URL schon Pagination hat, ersetzen (etwas hacky, für jetzt OK)
-                     url = base_url # Simplification: Nur Base URL supports pagination logic better if constructed dynamically
+                     url = base_url 
                 else:
-                    # Füge /seite:N ein
+                    # Standard Format: /s-suchbegriff/preis:100:300/k0
+                    # Ziel: /s-suchbegriff/seite:2/preis:100:300/k0
+                    # Wir suchen das Segement, das NICHT 'preis:' oder 'k0' ist, aber mit 's-' anfängt (optional) oder einfach das erste Segment nach Domain?
+                    # Besser: Wir splitten und suchen den Suchbegriff.
+                    
                     parts = base_url.split('/')
-                    # Finde den Teil mit /s-...
+                    # parts[0-2] ist https://domain
+                    # parts[3] ist meist 's-suchbegriff' oder 's-...'
+                    
+                    # Finde index wo 's-' steht (Such-Segment)
                     insert_idx = -1
                     for idx, p in enumerate(parts):
-                        if p.startswith('s-'):
+                        if p.startswith('s-') and 'preis:' not in p and 'seite:' not in p:
                             insert_idx = idx
                             break
                     
                     if insert_idx != -1:
-                        # Construct: .../s-seite:2/...
-                        # URL Structure is complex: /s-seite:2/preis.../k0
-                        # Einfacher: hänge seite:N an s- an
-                        new_s_part = parts[insert_idx].replace('s-', f's-seite:{page_num}-')
-                        parts[insert_idx] = new_s_part
+                        # Einfügen von 'seite:N' NACH dem Suchbegriff
+                        parts.insert(insert_idx + 1, f"seite:{page_num}")
                         url = "/".join(parts)
                     else:
-                        url = base_url + f"seite:{page_num}/" 
+                        # Fallback: Einfach anhängen, aber vor 'k0' wenn möglich?
+                        # Alte Logic fallback
+                        url = base_url.replace('/k0', f'/seite:{page_num}/k0') if '/k0' in base_url else base_url + f"/seite:{page_num}" 
 
             print(f"\n📄 Lade Seite {page_num}: {url}")
             
@@ -685,7 +691,7 @@ Antworte NUR mit: JA oder NEIN"""
 
 
 def main():
-    url = "https://www.kleinanzeigen.de/s-preis:100:300/playstation-5/k0" # Preisfilter angepasst (User Wunsch: max ~280)
+    url = "https://www.kleinanzeigen.de/s-playstation-5/preis:100:300/k0" # Standard URL Format (Search Term -> Price -> Category)
     
     # Schritt 1: Scrapen & Initial Filter (Pre-Filter + Title AI)
     # manual_filter läuft implizit VOR der KI in 'scrape_listings' (wenn wir es dort einbauen)

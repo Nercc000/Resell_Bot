@@ -469,7 +469,8 @@ def filter_titles_with_ai(listings: list[dict]) -> list[dict]:
     print(f"\n🤖 Analysiere {len(listings)} Titel mit KI...")
     
     # Trenne bereits markierte (durch Vor-Filter) von den zu prüfenden
-    to_check = [l for l in listings if l.get('filter_status') != 'rejected_keyword']
+    # WICHTIG: Auch 'rejected_price' darf NICHT mehr geprüft werden!
+    to_check = [l for l in listings if 'rejected' not in l.get('filter_status', '')]
     
     if not to_check:
         print("❌ Alle Listings bereits durch Vor-Filter abgelehnt.")

@@ -9,7 +9,7 @@
 # Site block for the IP address
 # Caddy will attempt to get a ZeroSSL cert if possible, otherwise falls back to internal self-signed.
 # Using nip.io allows us to get a REAL Let's Encrypt certificate!
-api.resellerbot.de {
+45.147.7.54.nip.io {
     reverse_proxy ps5-bot-backend:8000
 
     # CORS headers removed here because FastAPI handles them dynamically.

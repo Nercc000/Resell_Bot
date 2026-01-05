@@ -1,7 +1,10 @@
+# Caddyfile for api.resellerbot.de (Using BuyPass CA)
+
+# Global options
 {
     email digga9286@gmail.com
-    # Force ZeroSSL via gloabl ACME CA URL to avoid syntax errors in site block
-    acme_ca https://acme.zerossl.com/v2/DV90
+    # Switch to BuyPass Go SSL (Free, valid for 180 days)
+    acme_ca https://api.buypass.com/acme/directory
 }
 
 # Site block for the IP address

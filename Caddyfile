@@ -12,12 +12,8 @@
     # Reverse proxy to the backend container
     reverse_proxy backend:8000
 
-    # Enable CORS for the dashboard
-    header {
-        Access-Control-Allow-Origin "*"
-        Access-Control-Allow-Methods "GET, POST, OPTIONS"
-        Access-Control-Allow-Headers "*"
-    }
+    # CORS is handled by FastAPI app
+    # (removing manual headers to avoid duplicates)
     
     # Optional: Basic Auth for security (since it's public IP!)
     # basicauth / {

@@ -76,6 +76,11 @@ ssh $REMOTE_USER@$SERVER_IP << 'ENDSSH'
     docker stop ps5-bot 2>/dev/null || true
     docker rm ps5-bot 2>/dev/null || true
     
+    echo "🧹 Freeing port 80..."
+    fuser -k 80/tcp > /dev/null 2>&1 || true
+    systemctl stop apache2 > /dev/null 2>&1 || true
+    systemctl stop nginx > /dev/null 2>&1 || true
+
     echo "🐳 Starting Services (Backend + Caddy)..."
     docker compose down || true
     docker compose up -d --build

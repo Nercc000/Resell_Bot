@@ -73,4 +73,4 @@ EXPOSE 8000
 # Let's adjust pythonpath to include current dir.
 ENV PYTHONPATH=/app
 
-CMD ["uvicorn", "dashboard.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "dashboard.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

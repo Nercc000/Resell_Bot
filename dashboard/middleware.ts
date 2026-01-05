@@ -60,9 +60,28 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // ROUTE PROTECTION LOGIC
+    const adminEmail = "digga9286@gmail.com"
+
     // If no user and asking for protected route -> Redirect to Login
     if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
         return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // SECURITY: Whitelist Check
+    if (user && user.email !== adminEmail) {
+        // Log out unauthorized user (by clearing cookies manually or just redirecting with error)
+        // Proper way: Redirect to a page that says "Unauthorized" or just back to login with error
+        // We can't easily sign them out in middleware without calling an endpoint, so we destroy the cookies in the response
+        const url = new URL('/login', request.url)
+        url.searchParams.set('error', 'unauthorized_email')
+
+        const resp = NextResponse.redirect(url)
+        // Clear auth cookies
+        resp.cookies.set('sb-access-token', '', { maxAge: 0 })
+        resp.cookies.set('sb-refresh-token', '', { maxAge: 0 })
+        // Also clear project-specific cookie names if any (supabase-ssr usually uses sb-<ref>-auth-token)
+        // We'll rely on the client to handle the error state too
+        return resp
     }
 
     // If user exists and is on /login -> Redirect to Dashboard

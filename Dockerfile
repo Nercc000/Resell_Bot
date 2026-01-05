@@ -59,6 +59,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Explicitly install chromium and firefox as Camoufox/Playwright might need them
 RUN playwright install --with-deps chromium firefox
 
+# Pre-install Camoufox browser to avoid download on every startup
+RUN python -m camoufox fetch
+
 # Copy Project Files
 # We copy everything, but .dockerignore should exclude unneeded files
 COPY . .

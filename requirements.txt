@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+websockets
+camoufox[geoip]
+playwright
+python-dotenv
+supabase
+groq

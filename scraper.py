@@ -579,13 +579,9 @@ def manual_filter(listings: list[dict]) -> list[dict]:
         if matched_kw:
             # Aber behalte wenn "playstation 5" oder "ps5" auch im Titel
             if 'playstation 5' in title_lower or 'ps5' in title_lower:
-                # Prüfe ob es nur Controller/Zubehör ist
-                if 'controller' not in title_lower and 'dualsense' not in title_lower:
-                    # Scheint OK zu sein
-                    pass
-                else:
-                    l['filter_status'] = 'rejected_keyword'
-                    l['filter_reason'] = f"Keyword: {matched_kw}"
+                # Wir vertrauen hier der AI (Stufe 2), die später "Nur Controller" rausfiltert.
+                # Der manuelle Filter war zu strikt ("PS5 mit Controller" wurde gelöscht).
+                pass
             else:
                  l['filter_status'] = 'rejected_keyword'
                  l['filter_reason'] = f"Keyword: {matched_kw}"

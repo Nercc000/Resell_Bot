@@ -105,6 +105,354 @@ def dismiss_overlays(page):
     except: pass
 
 
+    except Exception as e:
+        print(f"   ⚠️ Cookie Config Fehler: {e}", flush=True)
+
+def dismiss_overlays(page):
+    """Schließt Modal-Backdrops und andere Overlays via JavaScript."""
+    # Erst Cookies klären
+    handle_cookie_consent(page)
+    
+    # Dann Rest
+    try:
+        page.evaluate("""
+            () => {
+                 // Login Overlay (nerviges zweites Modal)
+                const loginOverlay = document.querySelector('.login-overlay--content .overlay-close');
+                if (loginOverlay) loginOverlay.click();
+
+                // Allgemeine Modals
+                const closeButtons = document.querySelectorAll('.modal-close, .close-button, [aria-label="Schließen"], .overlay-close');
+                closeButtons.forEach(btn => btn.click());
+            }
+        """)
+    except: pass
+
+def scrape_listings(base_url: str, num_pages: int = 1, use_ai_filter: bool = True) -> list[dict]:
+    """Scrapt Listings von Kleinanzeigen."""
+    listings = []
+    
+    print(f"🌎 Starte Browser (Camoufox)...")
+    
+    with Camoufox(headless=True) as browser:
+        page = browser.new_page()
+        
+        # Anti-Detection Headers
+        page.set_extra_http_headers({
+            "Accept-Language": "de-DE,de;q=0.9",
+        })
+
+        for i in range(num_pages):
+            page_num = i + 1
+            if page_num == 1:
+                url = base_url
+            else:
+                # Kleinanzeigen Pagination Logic
+                if "/seite:" in base_url:
+                    # Falls URL schon Pagination hat, ersetzen (etwas hacky, für jetzt OK)
+                     url = base_url # Simplification: Nur Base URL supports pagination logic better if constructed dynamically
+                else:
+                    # Füge /seite:N ein
+                    parts = base_url.split('/')
+                    # Finde den Teil mit /s-...
+                    insert_idx = -1
+                    for idx, p in enumerate(parts):
+                        if p.startswith('s-'):
+                            insert_idx = idx
+                            break
+                    
+                    if insert_idx != -1:
+                        # Construct: .../s-seite:2/...
+                        # URL Structure is complex: /s-seite:2/preis.../k0
+                        # Einfacher: hänge seite:N an s- an
+                        new_s_part = parts[insert_idx].replace('s-', f's-seite:{page_num}-')
+                        parts[insert_idx] = new_s_part
+                        url = "/".join(parts)
+                    else:
+                        url = base_url + f"seite:{page_num}/" 
+
+            print(f"\n📄 Lade Seite {page_num}: {url}")
+            
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                random_delay(2, 4)
+                
+                # Cookie Banner & Overlays
+                if i == 0:
+                    dismiss_overlays(page)
+                
+                # Scrollen
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                random_delay(1, 2)
+                
+                # Parsing
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(page.content(), "html.parser")
+                
+                # Find ad list
+                ad_list = soup.find('ul', id='srchrslt-adtable')
+                if not ad_list:
+                    print("   ⚠️ Keine Anzeigen-Liste gefunden.")
+                    break
+                    
+                items = ad_list.find_all('li', class_='ad-listitem')
+                print(f"   Artikel auf Seite: {len(items)}")
+                
+                for item in items:
+                    if 'is-topad' in item.get('class', []): continue # Skip Top Ads (oft Werbung)
+                    
+                    article = item.find('article')
+                    if not article: continue
+                    
+                    try:
+                        id_ = article.get('data-adid')
+                        link_elem = article.find('a', class_='ellipsis')
+                        
+                        if not link_elem: continue
+                        
+                        title = link_elem.get_text().strip()
+                        link = "https://www.kleinanzeigen.de" + link_elem.get('href')
+                        
+                        # Preis
+                        price_elem = article.find('p', class_='aditem-main--middle--price-shipping--price')
+                        price = price_elem.get_text().strip() if price_elem else ""
+                        
+                        # Ort / Zeit
+                        details = article.find('div', class_='aditem-main--top--left')
+                        location = ""
+                        date_str = ""
+                        if details:
+                            txt = details.get_text(separator='|').strip()
+                            parts = [p.strip() for p in txt.split('|') if p.strip()]
+                            if len(parts) >= 2:
+                                location = parts[0]
+                                date_str = parts[1]
+                        
+                        # Tags
+                        tags_elem = article.find('div', class_='aditem-main--bottom')
+                        tags = []
+                        if tags_elem:
+                            tags = [t.get_text().strip() for t in tags_elem.find_all('span', class_='text-module-end')]
+                        
+                        listing = {
+                            "id": id_,
+                            "title": title,
+                            "price": price,
+                            "link": link,
+                            "location": location,
+                            "date": date_str,
+                            "tags": tags,
+                            "scraped_at": datetime.now().isoformat(),
+                            "isGesuch": "Gesuch" in title or "suche" in title.lower() # Grober check
+                        }
+                        listings.append(listing)
+                        
+                    except Exception as e:
+                        print(f"   Parsing Fehler für Item: {e}")
+                        continue
+                        
+            except Exception as e:
+                print(f"   Fehler beim Laden von Seite {page_num}: {e}")
+                
+    print(f"\n✅ Scraping beendet. {len(listings)} Anzeigen gefunden.")
+    return listings
+
+def categorize_listings(listings: list[dict]) -> list[dict]:
+    """
+    Kategorisiert Listings in 'normal', 'abholung', 'defekt'.
+    """
+    print(f"\n🏷️ Kategorisiere {len(listings)} Listings...")
+    
+    for l in listings:
+        text_full = (l['title'] + " " + l.get('description', '')).lower()
+        
+        # 1. Defekt Check
+        if any(x in text_full for x in ['defekt', 'kaputt', 'bastler', 'broken', 'schaden']):
+            l['category'] = 'defekt'
+            continue
+            
+        # 2. Abholung Check (wenn 'versand' explizit verneint oder 'nur abholung')
+        # Einfache Heuristik: 'nur abholung' oder 'kein versand'
+        if 'nur abholung' in text_full or 'kein versand' in text_full:
+            l['category'] = 'abholung'
+            continue
+            
+        # Default
+        l['category'] = 'normal'
+        
+    return listings
+
+    except Exception as e:
+        print(f"   ⚠️ Cookie Config Fehler: {e}", flush=True)
+
+def dismiss_overlays(page):
+    """Schließt Modal-Backdrops und andere Overlays via JavaScript."""
+    # Erst Cookies klären
+    handle_cookie_consent(page)
+    
+    # Dann Rest
+    try:
+        page.evaluate("""
+            () => {
+                 // Login Overlay (nerviges zweites Modal)
+                const loginOverlay = document.querySelector('.login-overlay--content .overlay-close');
+                if (loginOverlay) loginOverlay.click();
+
+                // Allgemeine Modals
+                const closeButtons = document.querySelectorAll('.modal-close, .close-button, [aria-label="Schließen"], .overlay-close');
+                closeButtons.forEach(btn => btn.click());
+            }
+        """)
+    except: pass
+
+def scrape_listings(base_url: str, num_pages: int = 1, use_ai_filter: bool = True) -> list[dict]:
+    """Scrapt Listings von Kleinanzeigen."""
+    listings = []
+    
+    print(f"🌎 Starte Browser (Camoufox)...")
+    
+    with Camoufox(headless=True) as browser:
+        page = browser.new_page()
+        
+        # Anti-Detection Headers
+        page.set_extra_http_headers({
+            "Accept-Language": "de-DE,de;q=0.9",
+        })
+
+        for i in range(num_pages):
+            page_num = i + 1
+            if page_num == 1:
+                url = base_url
+            else:
+                # Kleinanzeigen Pagination Logic
+                if "/seite:" in base_url:
+                     url = base_url 
+                else:
+                    parts = base_url.split('/')
+                    insert_idx = -1
+                    for idx, p in enumerate(parts):
+                        if p.startswith('s-'):
+                            insert_idx = idx
+                            break
+                    
+                    if insert_idx != -1:
+                        new_s_part = parts[insert_idx].replace('s-', f's-seite:{page_num}-')
+                        parts[insert_idx] = new_s_part
+                        url = "/".join(parts)
+                    else:
+                        url = base_url + f"seite:{page_num}/" 
+
+            print(f"\n📄 Lade Seite {page_num}: {url}")
+            
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                random_delay(2, 4)
+                
+                # Cookie Banner & Overlays
+                if i == 0:
+                    dismiss_overlays(page)
+                
+                # Scrollen
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                random_delay(1, 2)
+                
+                # Parsing
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(page.content(), "html.parser")
+                
+                # Find ad list
+                ad_list = soup.find('ul', id='srchrslt-adtable')
+                if not ad_list:
+                    print("   ⚠️ Keine Anzeigen-Liste gefunden.")
+                    break
+                    
+                items = ad_list.find_all('li', class_='ad-listitem')
+                print(f"   Artikel auf Seite: {len(items)}")
+                
+                for item in items:
+                    if 'is-topad' in item.get('class', []): continue # Skip Top Ads (oft Werbung)
+                    
+                    article = item.find('article')
+                    if not article: continue
+                    
+                    try:
+                        id_ = article.get('data-adid')
+                        link_elem = article.find('a', class_='ellipsis')
+                        
+                        if not link_elem: continue
+                        
+                        title = link_elem.get_text().strip()
+                        link = "https://www.kleinanzeigen.de" + link_elem.get('href')
+                        
+                        # Preis
+                        price_elem = article.find('p', class_='aditem-main--middle--price-shipping--price')
+                        price = price_elem.get_text().strip() if price_elem else ""
+                        
+                        # Ort / Zeit
+                        details = article.find('div', class_='aditem-main--top--left')
+                        location = ""
+                        date_str = ""
+                        if details:
+                            txt = details.get_text(separator='|').strip()
+                            parts = [p.strip() for p in txt.split('|') if p.strip()]
+                            if len(parts) >= 2:
+                                location = parts[0]
+                                date_str = parts[1]
+                        
+                        # Tags
+                        tags_elem = article.find('div', class_='aditem-main--bottom')
+                        tags = []
+                        if tags_elem:
+                            tags = [t.get_text().strip() for t in tags_elem.find_all('span', class_='text-module-end')]
+                        
+                        listing = {
+                            "id": id_,
+                            "title": title,
+                            "price": price,
+                            "link": link,
+                            "location": location,
+                            "date": date_str,
+                            "tags": tags,
+                            "scraped_at": datetime.now().isoformat(),
+                            "isGesuch": "Gesuch" in title or "suche" in title.lower() # Grober check
+                        }
+                        listings.append(listing)
+                        
+                    except Exception as e:
+                        print(f"   Parsing Fehler für Item: {e}")
+                        continue
+                        
+            except Exception as e:
+                print(f"   Fehler beim Laden von Seite {page_num}: {e}")
+                
+    print(f"\n✅ Scraping beendet. {len(listings)} Anzeigen gefunden.")
+    return listings
+
+def categorize_listings(listings: list[dict]) -> list[dict]:
+    """
+    Kategorisiert Listings in 'normal', 'abholung', 'defekt'.
+    """
+    print(f"\n🏷️ Kategorisiere {len(listings)} Listings...")
+    
+    for l in listings:
+        text_full = (l['title'] + " " + l.get('description', '')).lower()
+        
+        # 1. Defekt Check
+        if any(x in text_full for x in ['defekt', 'kaputt', 'bastler', 'broken', 'schaden']):
+            l['category'] = 'defekt'
+            continue
+            
+        # 2. Abholung Check (wenn 'versand' explizit verneint oder 'nur abholung')
+        # Einfache Heuristik: 'nur abholung' oder 'kein versand'
+        if 'nur abholung' in text_full or 'kein versand' in text_full:
+            l['category'] = 'abholung'
+            continue
+            
+        # Default
+        l['category'] = 'normal'
+        
+    return listings
+
 def filter_titles_with_ai(listings: list[dict]) -> list[dict]:
     """
     Benutzt Groq/Llama um Titel zu analysieren.

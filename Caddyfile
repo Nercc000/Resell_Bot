@@ -1,13 +1,11 @@
-# Caddyfile for api.resellerbot.de (Using BuyPass CA)
+# Caddyfile for nip.io fallback (Bypasses rate limit)
 
 # Global options
 {
     email digga9286@gmail.com
-    # Switch to BuyPass Go SSL (Free, valid for 180 days)
-    acme_ca https://api.buypass.com/acme/directory
 }
 
-# Site block for the IP address
-api.resellerbot.de {
+# Site block for the IP-based domain
+45.147.7.54.nip.io {
     reverse_proxy ps5-bot-backend:8000
 }

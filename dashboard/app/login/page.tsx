@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 // Note: We can use createBrowserClient from @supabase/ssr too, but easiest is usually just standard client if we have it. 
 // Let's use the one we already have in lib/supabase.ts for client-side
 import { supabase } from '@/lib/supabase'

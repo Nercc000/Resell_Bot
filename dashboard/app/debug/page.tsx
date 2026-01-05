@@ -1,13 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Search, Filter, ShieldCheck, ShieldAlert, RefreshCw } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Search, Filter, ShieldCheck, ShieldAlert, RefreshCw, BarChart3, Database } from "lucide-react"
+import { Check, X } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +22,7 @@ type DebugListing = {
     filter_reason: string | null
     created_at: string
     category: string | null
+    session_id: string | null
 }
 
 export default function DebugPage() {
@@ -27,14 +30,15 @@ export default function DebugPage() {
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'rejected'>('all')
+    const [selectedSession, setSelectedSession] = useState<string>("all")
 
     const fetchListings = async () => {
         setLoading(true)
         const { data, error } = await supabase
             .from('listings')
-            .select('id, title, price, link, filter_status, filter_reason, created_at, category')
+            .select('*')
             .order('created_at', { ascending: false })
-            .limit(1000)
+            .limit(2000)
 
         if (error) console.error(error)
         else setListings(data as DebugListing[])
@@ -45,19 +49,49 @@ export default function DebugPage() {
         fetchListings()
     }, [])
 
+    // Extract unique sessions and format date
+    const sessions = useMemo(() => {
+        const uniqueSessions = new Set(listings.map(l => l.session_id).filter(Boolean))
+        return Array.from(uniqueSessions).map(sid => {
+            const firstItem = listings.find(l => l.session_id === sid)
+            return {
+                id: sid as string,
+                date: firstItem ? new Date(firstItem.created_at).toLocaleString() : 'Unknown Date',
+                count: listings.filter(l => l.session_id === sid).length
+            }
+        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // sort new to old
+    }, [listings])
+
+    // Filter by session
+    const currentListings = useMemo(() => {
+        if (selectedSession === "all") return listings
+        return listings.filter(l => l.session_id === selectedSession)
+    }, [listings, selectedSession])
+
+    // Funnel Stats for Current View
+    const stats = useMemo(() => {
+        const total = currentListings.length
+        const passedTitle = currentListings.filter(l => l.filter_status?.includes('passed') || l.filter_status === 'passed_ai_title').length
+        const finalPassed = currentListings.filter(l => l.filter_status === 'passed' || l.filter_status?.includes('passed')).length // simplified
+        const rejected = currentListings.filter(l => l.filter_status?.includes('rejected')).length
+
+        return { total, passedTitle, finalPassed, rejected }
+    }, [currentListings])
+
+
     const getStatusBadge = (status: string | null) => {
         if (!status) return <Badge variant="outline" className="text-muted-foreground">Unbekannt</Badge>
 
         if (status.includes('passed')) {
-            return <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/25"><ShieldCheck className="w-3 h-3 mr-1" /> Passed</Badge>
+            return <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/25"><Check className="w-3 h-3 mr-1" /> Passed</Badge>
         }
         if (status.includes('rejected')) {
-            return <Badge variant="destructive" className="bg-red-500/15 text-red-500 border-red-500/20 hover:bg-red-500/25"><ShieldAlert className="w-3 h-3 mr-1" /> Rejected</Badge>
+            return <Badge variant="destructive" className="bg-red-500/15 text-red-500 border-red-500/20 hover:bg-red-500/25"><X className="w-3 h-3 mr-1" /> Rejected</Badge>
         }
         return <Badge variant="secondary">{status}</Badge>
     }
 
-    const filtered = listings.filter(l => {
+    const filtered = currentListings.filter(l => {
         const matchesSearch = l.title.toLowerCase().includes(search.toLowerCase()) ||
             (l.filter_reason && l.filter_reason.toLowerCase().includes(search.toLowerCase()))
 
@@ -68,58 +102,93 @@ export default function DebugPage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-background">
-            {/* Header removed - using global layout */}
 
             <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
 
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Filter className="w-6 h-6 text-purple-500" />
-                        Filter Debugger
-                    </h1>
-                    <Button variant="outline" size="sm" onClick={fetchListings} disabled={loading}>
-                        <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
-                        Refresh
-                    </Button>
+                {/* Header Row */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold flex items-center gap-2">
+                            <Filter className="w-6 h-6 text-purple-500" />
+                            Filter Test Pipeline
+                        </h1>
+                        <p className="text-muted-foreground text-sm">Visualisiere die Filter-Entscheidungen pro Run.</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                        <Select value={selectedSession} onValueChange={setSelectedSession}>
+                            <SelectTrigger className="w-[280px]">
+                                <SelectValue placeholder="Wähle einen Run / Session" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Alle Runs anzeigen ({listings.length})</SelectItem>
+                                {sessions.map(s => (
+                                    <SelectItem key={s.id} value={s.id}>
+                                        {s.date} ({s.count} Items)
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="sm" onClick={fetchListings} disabled={loading}>
+                            <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Scanned Total</CardTitle>
-                            <Search className="h-4 w-4 text-muted-foreground" />
+                {/* Funnel Visualization */}
+                <div className="grid gap-4 md:grid-cols-4">
+                    <Card className="bg-muted/30 border-dashed">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium flex items-center text-muted-foreground">
+                                <Database className="w-4 h-4 mr-2" /> Gescraped raw
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{listings.length}</div>
-                            <p className="text-xs text-muted-foreground">Letzte 200 Einträge</p>
+                            <div className="text-3xl font-bold">{stats.total}</div>
+                            <p className="text-xs text-muted-foreground">Eingang</p>
                         </CardContent>
                     </Card>
+
+                    {/* Arrow visual could go here */}
+
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Passed (Grün)</CardTitle>
-                            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium flex items-center text-blue-500">
+                                🤖 Title AI Check
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-emerald-500">
-                                {listings.filter(l => l.filter_status?.includes('passed')).length}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Erfolgreich gefiltert</p>
+                            <div className="text-3xl font-bold text-blue-500">{stats.passedTitle}</div>
+                            <p className="text-xs text-muted-foreground">Potenzielle Konsolen</p>
                         </CardContent>
                     </Card>
+
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Rejected (Rot)</CardTitle>
-                            <ShieldAlert className="h-4 w-4 text-red-500" />
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium flex items-center text-emerald-500">
+                                ✅ Final Passed
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-red-500">
-                                {listings.filter(l => l.filter_status?.includes('rejected')).length}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Aussortiert durch KI/Keywords</p>
+                            <div className="text-3xl font-bold text-emerald-500">{stats.finalPassed}</div>
+                            <p className="text-xs text-muted-foreground">Beschreibung + Preis OK</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-red-500/5 border-red-500/10">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium flex items-center text-red-500">
+                                🗑️ Rejected Total
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-red-500">{stats.rejected}</div>
+                            <p className="text-xs text-muted-foreground">Aussortiert</p>
                         </CardContent>
                     </Card>
                 </div>
+
 
                 {/* Filters */}
                 <div className="flex gap-4 items-center">
@@ -165,7 +234,7 @@ export default function DebugPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[100px]">Status</TableHead>
+                                    <TableHead className="w-[140px]">Status</TableHead>
                                     <TableHead>Titel</TableHead>
                                     <TableHead>Preis</TableHead>
                                     <TableHead>Grund / Reason</TableHead>
@@ -194,7 +263,7 @@ export default function DebugPage() {
                                 {filtered.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                            Keine Einträge gefunden.
+                                            Keine Einträge für diesen Filter.
                                         </TableCell>
                                     </TableRow>
                                 )}

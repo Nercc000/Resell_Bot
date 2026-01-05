@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import uuid
 from groq import Groq
 from camoufox.sync_api import Camoufox
 from supabase import create_client, Client
@@ -421,6 +422,10 @@ def main():
         if l.get('filter_status') == 'passed_ai_title':
              l['filter_status'] = 'passed' # Promote to passed (ohne Desc Check für jetzt, oder als 'candidate')
 
+    # Generate Session ID for this run
+    session_id = str(uuid.uuid4())
+    print(f"\n🆔 Session ID: {session_id}")
+
     # SAVE ALL to Supabase
     if supabase and categorized:
         print(f"\n💾 Sende {len(categorized)} Listings an Supabase 'listings'...")
@@ -439,6 +444,7 @@ def main():
                     "category": l.get('category', 'normal'),
                     "filter_status": f_status,
                     "filter_reason": f_reason,
+                    "session_id": session_id,
                     "created_at": datetime.now().isoformat(),
                     "data": l
                 }

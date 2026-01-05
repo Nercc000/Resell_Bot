@@ -1,16 +1,10 @@
-# Caddyfile for IP-based HTTPS (Self-Signed / Internal)
-
-# Global options
 {
-    # Global options
     email digga9286@gmail.com
+    # Force ZeroSSL via gloabl ACME CA URL to avoid syntax errors in site block
+    acme_ca https://acme.zerossl.com/v2/DV90
 }
 
 # Site block for the IP address
 api.resellerbot.de {
     reverse_proxy ps5-bot-backend:8000
-    
-    tls {
-        issuer zerossl
-    }
 }

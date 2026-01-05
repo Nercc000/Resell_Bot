@@ -87,5 +87,5 @@ ssh $REMOTE_USER@$SERVER_IP << 'ENDSSH'
     docker compose up -d --build
     
     echo "✅ Deployment SUCCESS!"
-    echo "🌐 API is reachable via HTTPS: https://45.147.7.54.nip.io"
+    echo "🌐 API is reachable via HTTPS: https://api.resellerbot.de"
 ENDSSH

@@ -2,23 +2,15 @@
 
 # Global options
 {
-    # disable auto-https for local testing if needed, but we want it ON for the server
-    # auto_https off 
+    # Global options
+    email digga9286@gmail.com
 }
 
 # Site block for the IP address
-# Caddy will attempt to get a ZeroSSL cert if possible, otherwise falls back to internal self-signed.
-# Using nip.io allows us to get a REAL Let's Encrypt certificate!
-45.147.7.54.nip.io {
+api.resellerbot.de {
     reverse_proxy ps5-bot-backend:8000
-
-    # CORS headers removed here because FastAPI handles them dynamically.
-    # Specifying them here caused conflicts/invalid headers.
-    # CORS is handled by FastAPI app
-    # (removing manual headers to avoid duplicates)
     
-    # Optional: Basic Auth for security (since it's public IP!)
-    # basicauth / {
-    #     admin JDJhJTE0J... 
-    # }
+    tls {
+        issuer zerossl
+    }
 }

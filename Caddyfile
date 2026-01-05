@@ -9,6 +9,9 @@
 # Site block for the IP address
 # Caddy will attempt to get a ZeroSSL cert if possible, otherwise falls back to internal self-signed.
 45.147.7.54 {
+    # Force internal self-signed cert (instantly works, no ACME issues)
+    tls internal
+
     # Reverse proxy to the backend container
     reverse_proxy backend:8000
 

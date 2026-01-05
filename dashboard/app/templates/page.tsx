@@ -40,19 +40,26 @@ export default function TemplatesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     useEffect(() => {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
         fetchTemplates()
     }, [])
 
+    // 1. Templates laden
     const fetchTemplates = async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('message_templates')
-            .select('*')
-            .order('created_at', { ascending: false })
+        try {
+            const { data, error } = await supabase
+                .from('message_templates')
+                .select('*')
+                .order('created_at', { ascending: false })
 
-        if (data) setTemplates(data)
-        if (error) console.error("Error fetching templates:", error)
-        setLoading(false)
+            if (error) throw error
+            setTemplates(data || [])
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const addTemplate = async () => {

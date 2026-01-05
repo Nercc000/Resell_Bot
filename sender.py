@@ -351,6 +351,12 @@ def send_all_messages(listings: list[dict]) -> dict:
         sent_ids = {row['listing_id'] for row in response.data} if response.data else set()
         print(f"   📊 {len(sent_ids)} Nachrichten erfolgreich gesendet in DB.")
         
+        # Config laden (Default: False = Nicht senden)
+        send_abholung = os.getenv("SEND_ABHOLUNG", "false").lower() == "true"
+        send_defekt = os.getenv("SEND_DEFEKT", "false").lower() == "true"
+        
+        print(f"   ⚙️ Config: Abholung={send_abholung}, Defekt={send_defekt}")
+
         for listing in listings:
             listing_id = listing.get('id')
             category = listing.get('category', 'normal')
@@ -359,10 +365,15 @@ def send_all_messages(listings: list[dict]) -> dict:
             if listing_id in sent_ids:
                 print(f"   ⏩ Überspringe '{listing.get('title', 'Unbekannt')[:30]}...' (bereits gesendet)")
                 skipped += 1
-            # Skip non-normal categories
-            elif category in ('abholung', 'defekt'):
-                print(f"   ⏩ Überspringe '{listing.get('title', 'Unbekannt')[:30]}...' (Kategorie: {category})")
+            
+            # Category Checks
+            elif category == 'abholung' and not send_abholung:
+                print(f"   ⏩ Überspringe '{listing.get('title', 'Unbekannt')[:30]}...' (Kategorie: Abholung - Config AUS)")
                 skipped += 1
+            elif category == 'defekt' and not send_defekt:
+                print(f"   ⏩ Überspringe '{listing.get('title', 'Unbekannt')[:30]}...' (Kategorie: Defekt - Config AUS)")
+                skipped += 1
+                
             else:
                 listings_to_send.append(listing)
         

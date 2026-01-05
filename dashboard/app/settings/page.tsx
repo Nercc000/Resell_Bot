@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
 
@@ -12,8 +13,10 @@ export default function SettingsPage() {
     const [loading, setLoading] = React.useState(false)
     const [config, setConfig] = React.useState<Record<string, string>>({})
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+
     React.useEffect(() => {
-        fetch('/api/config')
+        fetch(`${apiUrl}/api/config`)
             .then(res => res.json())
             .then(data => setConfig(data))
             .catch(console.error)
@@ -26,7 +29,7 @@ export default function SettingsPage() {
     const handleSave = async () => {
         setLoading(true)
         try {
-            await fetch('/api/config', {
+            await fetch(`${apiUrl}/api/config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(config)
@@ -120,6 +123,41 @@ export default function SettingsPage() {
                                     onChange={e => handleChange("MAX_PICKUP_DISTANCE_KM", e.target.value)}
                                 />
                             </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Send Configuration</CardTitle>
+                        <CardDescription>Control which categories the bot should message</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between space-x-2">
+                            <Label htmlFor="send-abholung" className="flex flex-col space-y-1">
+                                <span>Send to "Abholung Only"</span>
+                                <span className="font-normal text-sm text-muted-foreground">
+                                    Send messages even if shipping is not available
+                                </span>
+                            </Label>
+                            <Switch
+                                id="send-abholung"
+                                checked={config["SEND_ABHOLUNG"] === "true"}
+                                onCheckedChange={(c) => handleChange("SEND_ABHOLUNG", String(c))}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between space-x-2">
+                            <Label htmlFor="send-defekt" className="flex flex-col space-y-1">
+                                <span>Send to "Defekt"</span>
+                                <span className="font-normal text-sm text-muted-foreground">
+                                    Send messages to defective items
+                                </span>
+                            </Label>
+                            <Switch
+                                id="send-defekt"
+                                checked={config["SEND_DEFEKT"] === "true"}
+                                onCheckedChange={(c) => handleChange("SEND_DEFEKT", String(c))}
+                            />
                         </div>
                     </CardContent>
                 </Card>

@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: .
+    container_name: ps5-bot-backend
+    restart: always
+    env_file: .env
+    volumes:
+      - ./auth.json:/app/auth.json
+      - ./device.json:/app/device.json
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Backend port is internal only now (protected by Caddy)
+    # ports: 
+    #   - "8000:8000"
+
+  caddy:
+    image: caddy:latest
+    container_name: ps5-bot-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:

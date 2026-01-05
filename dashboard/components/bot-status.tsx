@@ -11,11 +11,13 @@ export function BotStatus() {
 
     const [isLoading, setIsLoading] = React.useState(false)
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+
     const handleStart = async (mode: string = "full") => {
         if (isLoading) return
         setIsLoading(true)
         try {
-            await fetch('/api/bot/start', {
+            await fetch(`${apiUrl}/api/bot/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode })
@@ -32,7 +34,7 @@ export function BotStatus() {
         if (isLoading) return
         setIsLoading(true)
         try {
-            await fetch('/api/bot/stop', { method: 'POST' })
+            await fetch(`${apiUrl}/api/bot/stop`, { method: 'POST' })
             setStatus("idle")
         } catch (e) {
             console.error(e)
@@ -45,7 +47,7 @@ export function BotStatus() {
     React.useEffect(() => {
         const checkStatus = async () => {
             try {
-                const res = await fetch('/api/bot/status')
+                const res = await fetch(`${apiUrl}/api/bot/status`)
                 const data = await res.json()
                 // Nur Status updaten wenn wir nicht gerade selbst was triggern
                 if (!isLoading) {

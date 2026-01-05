@@ -92,8 +92,11 @@ export function LiveLogs() {
     const clearLogs = () => setLogs([])
 
     React.useEffect(() => {
-        const hostname = window.location.hostname
-        const wsUrl = `ws://${hostname}:8000/api/ws/logs`
+        // Determine WebSocket URL
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || `http://${window.location.hostname}:8000`
+        const wsProtocol = apiUrl.startsWith('https') ? 'wss' : 'ws'
+        const wsHost = apiUrl.replace(/^https?:\/\//, '')
+        const wsUrl = `${wsProtocol}://${wsHost}/api/ws/logs`
 
         let ws: WebSocket | null = null
         let retryTimeout: NodeJS.Timeout

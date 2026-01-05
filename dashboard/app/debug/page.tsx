@@ -137,56 +137,72 @@ export default function DebugPage() {
                 </div>
 
                 {/* Funnel Visualization */}
-                <div className="grid gap-4 md:grid-cols-4">
-                    <Card className="bg-muted/30 border-dashed">
+                {/* Funnel Visualization */}
+                <div className="grid gap-4 md:grid-cols-4 relative">
+                    {/* Step 1: Raw */}
+                    <Card className="bg-muted/30 border-dashed relative overflow-hidden">
+                        <div className="absolute right-0 top-0 p-2 opacity-10"><Database className="w-12 h-12" /></div>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium flex items-center text-muted-foreground">
-                                <Database className="w-4 h-4 mr-2" /> Gescraped raw
+                                1. Rohdaten (Scraped)
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold">{stats.total}</div>
-                            <p className="text-xs text-muted-foreground">Eingang</p>
+                            <p className="text-xs text-muted-foreground">Alle gefundenen Anzeigen</p>
                         </CardContent>
                     </Card>
 
-                    {/* Arrow visual could go here */}
-
-                    <Card>
+                    {/* Step 2: Keyword Filter */}
+                    <Card className="relative overflow-hidden">
+                        <div className="absolute right-0 top-0 p-2 opacity-10"><Filter className="w-12 h-12 text-blue-500" /></div>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium flex items-center text-blue-500">
-                                🤖 Title AI Check
+                            <CardTitle className="text-sm font-medium flex items-center text-blue-600">
+                                2. Nach Keyword-Filter
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-blue-500">{stats.passedTitle}</div>
-                            <p className="text-xs text-muted-foreground">Potenzielle Konsolen</p>
+                            <div className="text-3xl font-bold text-blue-600">
+                                {currentListings.filter(l => !l.filter_status?.includes('rejected_keyword')).length}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {currentListings.filter(l => l.filter_status?.includes('rejected_keyword')).length} aussortiert (Gesuch/Zubehör)
+                            </p>
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    {/* Step 3: AI Filter */}
+                    <Card className="relative overflow-hidden">
+                        <div className="absolute right-0 top-0 p-2 opacity-10"><ShieldCheck className="w-12 h-12 text-purple-500" /></div>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium flex items-center text-emerald-500">
-                                ✅ Final Passed
+                            <CardTitle className="text-sm font-medium flex items-center text-purple-600">
+                                3. Nach AI-Check
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-emerald-500">{stats.finalPassed}</div>
-                            <p className="text-xs text-muted-foreground">Beschreibung + Preis OK</p>
+                            <div className="text-3xl font-bold text-purple-600">
+                                {currentListings.filter(l => l.filter_status?.includes('passed_ai') || l.filter_status === 'passed').length}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {currentListings.filter(l => l.filter_status?.includes('rejected_ai')).length} aussortiert (Falsche Konsole)
+                            </p>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-red-500/5 border-red-500/10">
+                    {/* Step 4: Final */}
+                    <Card className="bg-emerald-500/5 border-emerald-500/20 relative overflow-hidden">
+                        <div className="absolute right-0 top-0 p-2 opacity-10"><Check className="w-12 h-12 text-emerald-500" /></div>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium flex items-center text-red-500">
-                                🗑️ Rejected Total
+                            <CardTitle className="text-sm font-medium flex items-center text-emerald-600">
+                                ✅ Final Listings
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-red-500">{stats.rejected}</div>
-                            <p className="text-xs text-muted-foreground">Aussortiert</p>
+                            <div className="text-3xl font-bold text-emerald-600">{stats.finalPassed}</div>
+                            <p className="text-xs text-muted-foreground">Erscheinen im Dashboard</p>
                         </CardContent>
                     </Card>
+
                 </div>
 
 

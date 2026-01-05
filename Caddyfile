@@ -12,12 +12,8 @@
 api.resellerbot.de {
     reverse_proxy ps5-bot-backend:8000
 
-    header {
-        Access-Control-Allow-Origin "https://resellerbot.de https://www.resellerbot.de http://localhost:3000"
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "Content-Type, Authorization"
-        Access-Control-Allow-Credentials "true"
-    }
+    # CORS headers removed here because FastAPI handles them dynamically.
+    # Specifying them here caused conflicts/invalid headers.
     # CORS is handled by FastAPI app
     # (removing manual headers to avoid duplicates)
     

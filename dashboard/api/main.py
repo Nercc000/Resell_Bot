@@ -12,8 +12,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://45.147.7.54.nip.io",
-        "http://45.147.7.54.nip.io"
+        "https://resellerbot.de",
+        "https://www.resellerbot.de",
+        "https://api.resellerbot.de"
     ],
     allow_credentials=True,
     allow_methods=["*"],

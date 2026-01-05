@@ -33,9 +33,23 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"⚠️ Supabase Init Fehler: {e}")
 
 
+
 def random_delay(min_sec: float = 1.0, max_sec: float = 3.0):
     """Zufällige Wartezeit für menschlicheres Verhalten."""
     time.sleep(random.uniform(min_sec, max_sec))
+
+def parse_price(price_str):
+    if not price_str: return 0.0
+    # Entferne 'VB', '€' und Leerzeichen
+    clean = price_str.lower().replace('vb', '').replace('€', '').strip()
+    # Entferne Tausender-Punkte (1.200 -> 1200)
+    clean = clean.replace('.', '')
+    # Ersetze Komma durch Punkt (12,50 -> 12.50)
+    clean = clean.replace(',', '.')
+    try:
+        return float(clean)
+    except:
+        return 0.0
 
 
 def handle_cookie_consent(page):
@@ -688,6 +702,17 @@ def main():
 
     # 1. Manual Filter (Keywords) - Markiert rejected_keyword
     listings = manual_filter(raw_listings)
+
+    # 1.5 Strict Price Filter (Safety Net against Top Ads)
+    # Kleinanzeigen shows "Top Ads" that ignore price filters. We must filter them out manually.
+    print(f"\n💰 Prüfe Preise (Max 320€)...")
+    for l in listings:
+        if l.get('filter_status') == 'unknown': # Only check if not already rejected
+            p_val = parse_price(l.get('price', '0'))
+            if p_val > 320:
+                l['filter_status'] = 'rejected_price'
+                l['filter_reason'] = f'Price too high: {p_val} > 320'
+                # print(f"   💸 Ignoriere zu teures Listing: {l['title'][:20]}... ({p_val}€)")
     
     # 2. AI Title Filter - Markiert rejected_ai_title / passed_ai_title
     # Nur auf die loslassen, die noch nicht rejected sind
@@ -754,9 +779,6 @@ def main():
                 print(f"   ⚠️ DB Insert Error ({l['id']}): {e}")
 
     print("\n🚀 Fertig.")
-
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()

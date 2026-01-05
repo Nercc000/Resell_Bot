@@ -82,8 +82,8 @@ ssh $REMOTE_USER@$SERVER_IP << 'ENDSSH'
     systemctl stop nginx > /dev/null 2>&1 || true
 
     echo "🐳 Starting Services (Backend + Caddy)..."
-    # -v removes volumes (wipes old/broken SSL certs) to force fresh start
-    docker compose down -v || true
+    # DO NOT use -v here! It wipes SSL certificates and causes Let's Encrypt rate limits!
+    docker compose down || true
     docker compose up -d --build
     
     echo "✅ Deployment SUCCESS!"

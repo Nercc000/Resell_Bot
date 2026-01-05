@@ -12,6 +12,7 @@ WORKDIR /app
 # Install System Dependencies for Playwright & Camoufox
 RUN apt-get update && apt-get install -y \
     wget \
+    git \
     gnupg \
     ca-certificates \
     fonts-liberation \

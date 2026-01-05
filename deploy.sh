@@ -82,7 +82,8 @@ ssh $REMOTE_USER@$SERVER_IP << 'ENDSSH'
     systemctl stop nginx > /dev/null 2>&1 || true
 
     echo "🐳 Starting Services (Backend + Caddy)..."
-    docker compose down || true
+    # -v removes volumes (wipes old/broken SSL certs) to force fresh start
+    docker compose down -v || true
     docker compose up -d --build
     
     echo "✅ Deployment SUCCESS!"

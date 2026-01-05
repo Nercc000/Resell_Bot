@@ -34,7 +34,7 @@ export default function DebugPage() {
             .from('listings')
             .select('id, title, price, link, filter_status, filter_reason, created_at, category')
             .order('created_at', { ascending: false })
-            .limit(200)
+            .limit(1000)
 
         if (error) console.error(error)
         else setListings(data as DebugListing[])
@@ -68,28 +68,20 @@ export default function DebugPage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-background">
-            <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
-                <div className="flex h-16 items-center px-4 md:px-6 justify-between">
-                    <div className="flex items-center">
-                        <Link href="/">
-                            <Button variant="ghost" size="sm" className="gap-2">
-                                <ArrowLeft className="h-4 w-4" />
-                                Dashboard
-                            </Button>
-                        </Link>
-                        <h1 className="ml-4 text-lg font-bold flex items-center gap-2">
-                            <Filter className="w-5 h-5 text-purple-500" />
-                            Filter Debugger
-                        </h1>
-                    </div>
+            {/* Header removed - using global layout */}
+
+            <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                        <Filter className="w-6 h-6 text-purple-500" />
+                        Filter Debugger
+                    </h1>
                     <Button variant="outline" size="sm" onClick={fetchListings} disabled={loading}>
                         <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
                         Refresh
                     </Button>
                 </div>
-            </header>
-
-            <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
 
                 {/* Stats Cards */}
                 <div className="grid gap-4 md:grid-cols-3">

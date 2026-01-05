@@ -19,6 +19,9 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from "@/components/theme-provider"
 
+// ... imports
+import { Header } from "@/components/header"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +38,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

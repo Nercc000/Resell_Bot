@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Plus, Trash2, Pencil } from "lucide-react"
+import { Plus, Trash2, Pencil, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import {
     Dialog,
@@ -127,19 +127,16 @@ export default function TemplatesPage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-background">
-            <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
-                <div className="flex h-16 items-center px-4 md:px-6">
-                    <Link href="/">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                            <ArrowLeft className="h-4 w-4" />
-                            Zurück zum Dashboard
-                        </Button>
-                    </Link>
-                    <h1 className="ml-4 text-lg font-bold">Nachrichten Vorlagen</h1>
-                </div>
-            </header>
+            {/* Header removed - in layout now */}
 
             <main className="flex-1 p-8 pt-6 max-w-4xl mx-auto w-full space-y-6">
+
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                        <MessageSquare className="w-6 h-6" />
+                        Nachrichten Vorlagen
+                    </h1>
+                </div>
 
                 <Card>
                     <CardHeader>

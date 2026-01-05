@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Save } from "lucide-react"
+import { Save, Settings } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -44,17 +44,16 @@ export default function SettingsPage() {
 
     return (
         <div className="flex min-h-screen flex-col">
-            <header className="border-b">
-                <div className="flex h-16 items-center px-4 md:px-6">
-                    <Link href="/">
-                        <Button variant="ghost" size="icon" className="mr-2">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                    </Link>
-                    <h1 className="text-lg font-bold">Settings</h1>
-                </div>
-            </header>
+            {/* Header removed - in layout now */}
+
             <main className="flex-1 space-y-6 p-8 pt-6 max-w-2xl mx-auto w-full">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                        <Settings className="w-6 h-6" />
+                        Settings
+                    </h1>
+                </div>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Kleinanzeigen Credentials</CardTitle>

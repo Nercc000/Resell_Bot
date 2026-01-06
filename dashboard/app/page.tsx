@@ -3,6 +3,7 @@ import { StatsCards } from "@/components/stats-cards"
 import { LiveLogs } from "@/components/live-logs"
 import { ListingsTable } from "@/components/listings-table"
 import { RealtimeProvider } from "@/components/realtime-provider"
+import { SearchControls } from "@/components/search-controls"
 import { Button } from "@/components/ui/button"
 import { Settings, MessageSquare, Filter } from "lucide-react"
 import Link from "next/link"
@@ -22,6 +23,7 @@ export default function Dashboard() {
 
             {/* Left Column: Controls & Logs (4 cols) */}
             <div className="md:col-span-4 space-y-6">
+              <SearchControls />
               <BotStatus />
               <LiveLogs />
             </div>

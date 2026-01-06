@@ -708,9 +708,20 @@ Antworte NUR mit: JA oder NEIN"""
 
 
 def main():
-    # Korrigierte URL: Query-Parameter statt Path-basierter Filter
-    # Die alte URL /s-playstation-5/preis:100:300/k0 wurde falsch geparst
-    url = "https://www.kleinanzeigen.de/s-ps5/k0?minPreis=100&maxPreis=350"
+    # Read config from .env (loaded at top of file)
+    search_term = os.getenv("SEARCH_TERM", "ps5")
+    min_price = os.getenv("MIN_PRICE", "100")
+    max_price = os.getenv("MAX_PRICE", "350")
+    
+    # Construct URL dynamically
+    # Clean search term for URL (replace spaces with -)
+    term_clean = search_term.replace(" ", "-").lower()
+    if not term_clean.startswith("s-"):
+        term_clean = f"s-{term_clean}"
+        
+    url = f"https://www.kleinanzeigen.de/{term_clean}/k0?minPreis={min_price}&maxPreis={max_price}"
+    
+    print(f"🌍 Such-Parameter: '{search_term}' ({min_price}-{max_price}€)")
     
     # Schritt 1: Scrapen & Initial Filter (Pre-Filter + Title AI)
     # manual_filter läuft implizit VOR der KI in 'scrape_listings' (wenn wir es dort einbauen)

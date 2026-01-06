@@ -584,6 +584,13 @@ def manual_filter(listings: list[dict]) -> list[dict]:
         'miete', 'verleih'
     ]
     
+    search_term = os.getenv("SEARCH_TERM", "ps5").lower()
+    search_term_clean = search_term.replace(" ", "").lower() # e.g. "xboxseriesx"
+    
+    # Split search term into parts for looser matching if needed (simple approach first)
+    # e.g. "xbox series x" -> ["xbox", "series", "x"]
+    term_parts = search_term.lower().split()
+
     for l in listings:
         # Skip wenn schon rejected (z.B. durch anderen Filter)
         if l.get('filter_status') and 'rejected' in l['filter_status']:
@@ -597,15 +604,42 @@ def manual_filter(listings: list[dict]) -> list[dict]:
             l['filter_status'] = 'rejected_keyword'
             l['filter_reason'] = 'Gesuch erkannt'
             continue
-            
-        # Skip wenn Keywords im Titel
+
+        # Check ob Suchbegriff im Titel (Basis-Check)
+        # Lockerer Check: Mindestens ein wichtiger Teil des Suchbegriffs sollte drin sein
+        # Oder der genaue String
+        
+        # Simple Logic: Check if "ps5" or "playstation 5" matches, customized for configured term
+        # Wir prüfen ob der Titel den Search Term enthält
+        
+        # Falls Search Term "ps5" ist, prüfen wir auch auf "playstation 5"
+        term_variations = [search_term, search_term_clean]
+        if 'ps5' in search_term:
+            term_variations.append("playstation 5")
+            term_variations.append("playstation5")
+        
+        # Check match
+        matches_term = any(t in title_lower for t in term_variations)
+        
+        if not matches_term:
+             # Fallback: Wenn wir z.B. "iphone 15" suchen, aber Titel ist "Apple iPhone 15" -> passt.
+             # Aber wenn Titel nur "Verkaufe Handy" ist -> raus.
+             
+             # Wenn nicht gefunden, markieren wir es mal als mismatch, 
+             # aber wir könnten hier auch toleranter sein.
+             l['filter_status'] = 'rejected_name_mismatch'
+             l['filter_reason'] = f"Title missing search term '{search_term}'"
+             continue
+             
+        # Skip wenn Keywords im Titel (Negative Keywords)
         matched_kw = next((kw for kw in skip_keywords if kw in title_lower), None)
         if matched_kw:
-            # Aber behalte wenn "playstation 5" oder "ps5" auch im Titel
-            if 'playstation 5' in title_lower or 'ps5' in title_lower:
-                # Wir vertrauen hier der AI (Stufe 2), die später "Nur Controller" rausfiltert.
-                # Der manuelle Filter war zu strikt ("PS5 mit Controller" wurde gelöscht).
-                pass
+            # Aber behalte wenn Suchbegriff EINDEUTIG ist und Keyword vielleicht Kontext ist
+            # Hier vereinfacht: Wenn Keyword da ist, raus damit (außer wir whitelisten es explizit)
+            
+            # Ausnahme: Wenn wir nach "controller" suchen, darf "controller" nicht skippen
+            if matched_kw in search_term:
+                pass 
             else:
                  l['filter_status'] = 'rejected_keyword'
                  l['filter_reason'] = f"Keyword: {matched_kw}"

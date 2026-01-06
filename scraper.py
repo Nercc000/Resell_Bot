@@ -455,11 +455,26 @@ def filter_titles_with_ai(listings: list[dict]) -> list[dict]:
     pre_filtered = []
     print(f"\n🔍 Starte Vor-Filterung von {len(listings)} Anzeigen...")
     
+    search_term = os.getenv("SEARCH_TERM", "ps5").lower()
+    search_term_clean = search_term.replace(" ", "").lower()
+    term_parts = search_term.split()
+
     for l in listings:
         t = l['title'].lower()
         
-        # MUSS "ps5" oder "playstation 5" enthalten
-        if "ps5" not in t and "playstation 5" not in t and "playstation5" not in t:
+        # MUSS Suchbegriff enthalten (Token-basiert oder Variationen)
+        # Check if ALL parts are in title
+        all_parts_found = all(part in t for part in term_parts)
+        
+        # PS5-Handling fallback
+        synonyms = [search_term, search_term_clean]
+        if 'ps5' in search_term:
+            synonyms.append("playstation 5")
+            synonyms.append("playstation5")
+            
+        matches_strict = any(s in t for s in synonyms)
+        
+        if not (all_parts_found or matches_strict):
             continue
             
         # Darf NICHT "Suche/Gesuch" sein
@@ -481,7 +496,7 @@ def filter_titles_with_ai(listings: list[dict]) -> list[dict]:
             
         pre_filtered.append(l)
 
-    print(f"✅ {len(pre_filtered)} von {len(listings)} Listings haben den 'PS5'-Namenstest bestanden.")
+    print(f"✅ {len(pre_filtered)} von {len(listings)} Listings haben den '{search_term}'-Namenstest bestanden.")
     
     if not pre_filtered:
         print("❌ Alle Listings wurden vom Vor-Filter aussortiert.")

@@ -16,8 +16,8 @@ from groq import Groq
 from camoufox.sync_api import Camoufox
 from supabase import create_client, Client
 
-# .env laden
-load_dotenv()
+# .env laden (override=True zwingend, damit Docker-Env-Vars aktualisiert werden!)
+load_dotenv(override=True)
 
 # API Keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")

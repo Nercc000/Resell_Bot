@@ -66,6 +66,14 @@ if [ -f "device.json" ]; then
     scp device.json $REMOTE_USER@$SERVER_IP:$REMOTE_DIR/device.json
 fi
 
+# 5b. Transfer Dashboard Build (Since it's not in Git)
+if [ -d "dashboard/out" ]; then
+    echo "🔹 Transferring dashboard build..."
+    scp -r dashboard/out $REMOTE_USER@$SERVER_IP:$REMOTE_DIR/dashboard/out
+else
+    echo "⚠️ Warning: dashboard/out not found! Frontend might be outdated."
+fi 
+
 # 6. Build and Restart Docker Compose
 echo "🔹 Building and Restarting Docker Compose..."
 ssh $REMOTE_USER@$SERVER_IP << 'ENDSSH'

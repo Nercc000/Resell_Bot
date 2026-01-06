@@ -37,12 +37,15 @@ export function MessageTemplatesTab() {
     const [editContent, setEditContent] = useState("")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
+    const [error, setError] = useState<string | null>(null)
+
     useEffect(() => {
         fetchTemplates()
     }, [])
 
     const fetchTemplates = async () => {
         setLoading(true)
+        setError(null)
         try {
             const { data, error } = await supabase
                 .from('message_templates')
@@ -51,8 +54,9 @@ export function MessageTemplatesTab() {
 
             if (error) throw error
             setTemplates(data || [])
-        } catch (e) {
+        } catch (e: any) {
             console.error(e)
+            setError(e.message || "Unbekannter Fehler beim Laden")
         } finally {
             setLoading(false)
         }
@@ -123,6 +127,11 @@ export function MessageTemplatesTab() {
 
     return (
         <div className="space-y-6">
+            {error && (
+                <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-md">
+                    Fehler: {error}
+                </div>
+            )}
             <Card>
                 <CardHeader>
                     <CardTitle>Neue Vorlage hinzufügen</CardTitle>

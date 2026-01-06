@@ -522,7 +522,13 @@ def filter_titles_with_ai(listings: list[dict]) -> list[dict]:
         for i, l in enumerate(to_check)
     ])
     
-    prompt = f"""Du bist ein strenger Einkaufs-Modet.
+    # Dynamic Prompt Construction
+    
+    product_name = search_term.upper()
+    
+    if "ps5" in search_term or "playstation 5" in search_term:
+        # Specific PS5 Rules
+        prompt = f"""Du bist ein strenger Einkaufs-Modet.
 Aufgabe: Identifiziere Anzeigen, die eine ECHTE PlayStation 5 KONSOLE verkaufen.
 
 FILTERE STRENG RAUS (NEIN):
@@ -540,6 +546,27 @@ ANZEIGEN:
 {titles_text}
 
 Antworte NUR mit einem JSON-Array der Nummern der ECHTEN KONSOLEN, z.B. [1, 3, 5]."""
+
+    else:
+        # Generic Rules for other items (Xbox, iPhone, etc.)
+        prompt = f"""Du bist ein strenger Einkaufs-Modet.
+Aufgabe: Identifiziere Anzeigen, die ein ECHTES '{product_name}' verkaufen.
+
+FILTERE STRENG RAUS (NEIN):
+- Veraltete Versionen / Andere Modelle (die nicht {product_name} sind)
+- NUR Zubehör, Kabel, Kartons (OVP), Spiele ohne Konsole/Gerät
+- Defekte Geräte
+- Miete / Verleih
+- "Suche" Anzeigen
+
+BEHALTE NUR (JA):
+- Funktionierende '{product_name}' Geräte
+- Auch Bundles, wenn das Hauptgerät enthalten ist.
+
+ANZEIGEN:
+{titles_text}
+
+Antworte NUR mit einem JSON-Array der Nummern der ECHTEN TREFFER, z.B. [1, 3, 5]."""
 
     print("\n📤 Sende an Groq/Llama 3.3 70B...")
     

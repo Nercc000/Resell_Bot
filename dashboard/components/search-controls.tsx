@@ -5,20 +5,31 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, Save, Euro } from "lucide-react"
+import { Search, Save, Euro, Sparkles } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export function SearchControls() {
     const [loading, setLoading] = React.useState(false)
     const [config, setConfig] = React.useState<Record<string, string>>({
         SEARCH_TERM: "ps5",
         MIN_PRICE: "100",
-        MAX_PRICE: "350"
+        MAX_PRICE: "350",
+        PROMPT_TEMPLATE_ID: ""
     })
+    const [templates, setTemplates] = React.useState<{ id: string, name: string }[]>([])
 
     // Get API URL from env (frontend env var)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
 
     React.useEffect(() => {
+        // Fetch Config
         fetch(`${apiUrl}/api/config`)
             .then(res => res.json())
             .then(data => {
@@ -26,7 +37,22 @@ export function SearchControls() {
                 setConfig(prev => ({ ...prev, ...data }))
             })
             .catch(console.error)
+
+        // Fetch Templates
+        fetchTemplates()
     }, [apiUrl])
+
+    const fetchTemplates = async () => {
+        const { data, error } = await supabase
+            .from('prompt_templates')
+            .select('id, name')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+
+        if (data) {
+            setTemplates(data)
+        }
+    }
 
     const handleChange = (key: string, value: string) => {
         setConfig(prev => ({ ...prev, [key]: value }))
@@ -70,6 +96,31 @@ export function SearchControls() {
                             onChange={e => handleChange("SEARCH_TERM", e.target.value)}
                         />
                     </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="prompt-template">KI Prompt Template</Label>
+                    <Select
+                        value={config.PROMPT_TEMPLATE_ID || "default"}
+                        onValueChange={(val) => handleChange("PROMPT_TEMPLATE_ID", val === "default" ? "" : val)}
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Wähle ein Template..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="default">
+                                <span className="flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-blue-500" />
+                                    Automatisch (Generisch)
+                                </span>
+                            </SelectItem>
+                            {templates.map(t => (
+                                <SelectItem key={t.id} value={t.id}>
+                                    {t.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

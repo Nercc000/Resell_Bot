@@ -522,13 +522,32 @@ def filter_titles_with_ai(listings: list[dict]) -> list[dict]:
         for i, l in enumerate(to_check)
     ])
     
-    # Dynamic Prompt Construction
+    # Dynamic Prompt Construction OR Template Fetch
     
-    product_name = search_term.upper()
+    prompt_template_id = os.getenv("PROMPT_TEMPLATE_ID")
+    prompt = ""
     
-    if "ps5" in search_term or "playstation 5" in search_term:
-        # Specific PS5 Rules
-        prompt = f"""Du bist ein strenger Einkaufs-Modet.
+    if prompt_template_id and supabase:
+        try:
+             # Fetch Template
+             print(f"   📥 Lade Prompt Template: {prompt_template_id}")
+             res = supabase.table('prompt_templates').select('content').eq('id', prompt_template_id).execute()
+             if res.data and len(res.data) > 0:
+                 template_content = res.data[0]['content']
+                 prompt = template_content.replace('{{LISTINGS}}', titles_text)
+                 print("   ✅ Custom Template geladen und Listings eingefügt.")
+             else:
+                 print("   ⚠️ Template nicht gefunden. Fallback auf Standard.")
+        except Exception as e:
+             print(f"   ⚠️ Fehler beim Laden des Templates: {e}")
+
+    # Fallback to dynamic logic if no prompt yet
+    if not prompt:
+        product_name = search_term.upper()
+        
+        if "ps5" in search_term or "playstation 5" in search_term:
+            # Specific PS5 Rules
+            prompt = f"""Du bist ein strenger Einkaufs-Modet.
 Aufgabe: Identifiziere Anzeigen, die eine ECHTE PlayStation 5 KONSOLE verkaufen.
 
 FILTERE STRENG RAUS (NEIN):
@@ -547,9 +566,9 @@ ANZEIGEN:
 
 Antworte NUR mit einem JSON-Array der Nummern der ECHTEN KONSOLEN, z.B. [1, 3, 5]."""
 
-    else:
-        # Generic Rules for other items (Xbox, iPhone, etc.)
-        prompt = f"""Du bist ein strenger Einkaufs-Modet.
+        else:
+            # Generic Rules
+            prompt = f"""Du bist ein strenger Einkaufs-Modet.
 Aufgabe: Identifiziere Anzeigen, die ein ECHTES '{product_name}' verkaufen.
 
 FILTERE STRENG RAUS (NEIN):

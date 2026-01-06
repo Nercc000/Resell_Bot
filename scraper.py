@@ -525,9 +525,6 @@ def filter_titles_with_ai(listings: list[dict]) -> list[dict]:
     # Dynamic Prompt Construction OR Template Fetch
     
     prompt_template_id = os.getenv("PROMPT_TEMPLATE_ID")
-    print(f"   🐛 DEBUG: PROMPT_TEMPLATE_ID='{prompt_template_id}'")
-    print(f"   🐛 DEBUG: Supabase Client={bool(supabase)}")
-    
     prompt = ""
     
     if prompt_template_id and supabase:

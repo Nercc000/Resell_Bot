@@ -4,6 +4,7 @@ import signal
 from typing import List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -16,9 +17,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Global state
 bot_process: Optional[asyncio.subprocess.Process] = None
 active_websockets: List[WebSocket] = []
+
 
 class BotStatus(BaseModel):
     status: str  # idle, running
@@ -246,6 +249,14 @@ async def get_stats():
     except: pass
     
     return stats
+
+# Serve Frontend (Static Export)
+# This assumes dashboard/out is present in /app/dashboard/out
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../out"))
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+else:
+    print(f"⚠️ Warning: Static directory not found at {static_dir}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -708,7 +708,9 @@ Antworte NUR mit: JA oder NEIN"""
 
 
 def main():
-    url = "https://www.kleinanzeigen.de/s-playstation-5/preis:100:300/k0" # Standard URL Format (Search Term -> Price -> Category)
+    # Korrigierte URL: Query-Parameter statt Path-basierter Filter
+    # Die alte URL /s-playstation-5/preis:100:300/k0 wurde falsch geparst
+    url = "https://www.kleinanzeigen.de/s-ps5/k0?minPreis=100&maxPreis=350"
     
     # Schritt 1: Scrapen & Initial Filter (Pre-Filter + Title AI)
     # manual_filter läuft implizit VOR der KI in 'scrape_listings' (wenn wir es dort einbauen)

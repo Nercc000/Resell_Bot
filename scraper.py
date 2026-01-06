@@ -658,6 +658,8 @@ def manual_filter(listings: list[dict]) -> list[dict]:
     
     passed_count = sum(1 for l in listings if l.get('filter_status') == 'passed_prefilter')
     print(f"✅ {passed_count} von {len(listings)} Listings haben den '{search_term}'-Namenstest bestanden.")
+    
+    return listings
 
 
 def price_clean(p):

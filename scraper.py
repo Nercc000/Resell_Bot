@@ -193,6 +193,23 @@ def scrape_listings(base_url: str, num_pages: int = 1, use_ai_filter: bool = Tru
                 ad_list = soup.find('ul', id='srchrslt-adtable')
                 if not ad_list:
                     print("   ⚠️ Keine Anzeigen-Liste gefunden.")
+                    # DEBUG: Save screenshot and HTML for analysis
+                    try:
+                        page.screenshot(path="debug_no_adlist.png")
+                        with open("debug_no_adlist.html", "w", encoding="utf-8") as f:
+                            f.write(page.content())
+                        print("   📸 Debug-Screenshot gespeichert: debug_no_adlist.png")
+                        
+                        # Check for common issues
+                        html_lower = page.content().lower()
+                        if "captcha" in html_lower or "challenge" in html_lower:
+                            print("   🚨 CAPTCHA/Challenge erkannt!")
+                        if "blocked" in html_lower or "gesperrt" in html_lower:
+                            print("   🚨 IP möglicherweise GEBLOCKT!")
+                        if "too many requests" in html_lower:
+                            print("   🚨 Rate Limit erkannt!")
+                    except Exception as debug_err:
+                        print(f"   Debug save error: {debug_err}")
                     break
                     
                 items = ad_list.find_all('li', class_='ad-listitem')

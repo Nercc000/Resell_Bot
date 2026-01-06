@@ -618,26 +618,34 @@ def manual_filter(listings: list[dict]) -> list[dict]:
             term_variations.append("playstation 5")
             term_variations.append("playstation5")
         
-        # Check match
-        matches_term = any(t in title_lower for t in term_variations)
+        # Check Match
+        # Wir prüfen ob ALLE Wörter des Suchbegriffs im Titel vorkommen (Token-basiert)
+        # z.B. "Xbox Series X" -> muss "Xbox", "Series" und "X" enthalten (Reihenfolge egal)
         
-        if not matches_term:
-             # Fallback: Wenn wir z.B. "iphone 15" suchen, aber Titel ist "Apple iPhone 15" -> passt.
-             # Aber wenn Titel nur "Verkaufe Handy" ist -> raus.
+        # Ausnahme: PS5/Playstation 5 behandeln wir als Synonym
+        requires_all = term_parts
+        if 'ps5' in search_term:
+             # Logic is complex for PS5 synonyms, simplify:
+             # Just stick to flexible matching or exact variations
+             pass # Use existing var
              
-             # Wenn nicht gefunden, markieren wir es mal als mismatch, 
-             # aber wir könnten hier auch toleranter sein.
+        # Check if ALL parts are in title
+        all_parts_found = all(part in title_lower for part in term_parts)
+        
+        # Alternative: Strict substring match (old way) or cleaned match
+        matches_strict = any(t in title_lower for t in term_variations)
+        
+        if not (all_parts_found or matches_strict):
              l['filter_status'] = 'rejected_name_mismatch'
-             l['filter_reason'] = f"Title missing search term '{search_term}'"
+             l['filter_reason'] = f"Title mismatch '{search_term}'"
+             # DEBUG:
+             # print(f"   ❌ Rejected: {l['title']} (Reason: {l['filter_reason']})")
              continue
              
         # Skip wenn Keywords im Titel (Negative Keywords)
         matched_kw = next((kw for kw in skip_keywords if kw in title_lower), None)
         if matched_kw:
             # Aber behalte wenn Suchbegriff EINDEUTIG ist und Keyword vielleicht Kontext ist
-            # Hier vereinfacht: Wenn Keyword da ist, raus damit (außer wir whitelisten es explizit)
-            
-            # Ausnahme: Wenn wir nach "controller" suchen, darf "controller" nicht skippen
             if matched_kw in search_term:
                 pass 
             else:
@@ -645,10 +653,11 @@ def manual_filter(listings: list[dict]) -> list[dict]:
                  l['filter_reason'] = f"Keyword: {matched_kw}"
             continue
             
-        # Vor-FilterPassed (wird später von KI überschrieben oder bestätigt)
+        # Vor-FilterPassed
         l['filter_status'] = 'passed_prefilter'
     
-    return listings
+    passed_count = sum(1 for l in listings if l.get('filter_status') == 'passed_prefilter')
+    print(f"✅ {passed_count} von {len(listings)} Listings haben den '{search_term}'-Namenstest bestanden.")
 
 
 def price_clean(p):

@@ -6,6 +6,7 @@
 }
 
 # Site block for the IP-based domain
-45.147.7.54.nip.io {
+# Site block for the IP-based domain and real domains
+45.147.7.54.nip.io, www.resellerbot.de, resellerbot.de {
     reverse_proxy ps5-bot-backend:8000
 }

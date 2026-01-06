@@ -753,8 +753,14 @@ Antworte NUR mit: JA oder NEIN"""
 def main():
     # Read config from .env (loaded at top of file)
     search_term = os.getenv("SEARCH_TERM", "ps5")
-    min_price = os.getenv("MIN_PRICE", "100")
-    max_price = os.getenv("MAX_PRICE", "350")
+    min_price_env = os.getenv("MIN_PRICE", "100")
+    max_price_env = os.getenv("MAX_PRICE", "350")
+    
+    # Cast to int for logic
+    try:
+         max_price_val = int(max_price_env)
+    except:
+         max_price_val = 350
     
     # Construct URL dynamically
     # Clean search term for URL (replace spaces with -)
@@ -762,9 +768,9 @@ def main():
     if not term_clean.startswith("s-"):
         term_clean = f"s-{term_clean}"
         
-    url = f"https://www.kleinanzeigen.de/{term_clean}/k0?minPreis={min_price}&maxPreis={max_price}"
+    url = f"https://www.kleinanzeigen.de/{term_clean}/k0?minPreis={min_price_env}&maxPreis={max_price_env}"
     
-    print(f"🌍 Such-Parameter: '{search_term}' ({min_price}-{max_price}€)")
+    print(f"🌍 Such-Parameter: '{search_term}' ({min_price_env}-{max_price_env}€)")
     
     # Schritt 1: Scrapen & Initial Filter (Pre-Filter + Title AI)
     # manual_filter läuft implizit VOR der KI in 'scrape_listings' (wenn wir es dort einbauen)
@@ -781,13 +787,13 @@ def main():
 
     # 1.5 Strict Price Filter (Safety Net against Top Ads)
     # Kleinanzeigen shows "Top Ads" that ignore price filters. We must filter them out manually.
-    print(f"\n💰 Prüfe Preise (Max 320€)...")
+    print(f"\n💰 Prüfe Preise (Max {max_price_val}€)...")
     for l in listings:
         if l.get('filter_status') == 'unknown': # Only check if not already rejected
             p_val = parse_price(l.get('price', '0'))
-            if p_val > 320:
+            if p_val > max_price_val:
                 l['filter_status'] = 'rejected_price'
-                l['filter_reason'] = f'Price too high: {p_val} > 320'
+                l['filter_reason'] = f'Price too high: {p_val} > {max_price_val}'
                 # print(f"   💸 Ignoriere zu teures Listing: {l['title'][:20]}... ({p_val}€)")
     
     # 2. AI Title Filter - Markiert rejected_ai_title / passed_ai_title
